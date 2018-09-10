@@ -43,12 +43,23 @@ function draw() {
 	//Print dot on screen for strongest amplitude
    	strokeWeight(3);
 	beginShape(POINTS);
-	vertex(freq, highest_amp);
+	vertex(freq, map(highest_amp, 0, 255, height, 0));
 	endShape();
 
+/*
 	// Print frequency and amplitude to console
    setInterval(function() {
    	console.log(highest_amp + ", " + freq);
 
    }, 1000);
+*/
+
+      beginShape();
+      for (i = 20; i < 20000; i += 10) {
+      	vertex(i, map(fft.getEnergy(i), 0, 255, height, 0) );
+      /*
+   for (i = 0; i<spectrum.length; i++) {
+    vertex(i, map(spectrum[i], 0, 255, height, 0) ); */
+   }
+   endShape();
 }
