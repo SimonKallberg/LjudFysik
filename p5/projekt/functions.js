@@ -1,65 +1,127 @@
 var mic, fft;
+var freq_log = [0,1,2];
 
 function setup() {
 	createCanvas(1024,400);
    noFill();
-   
+
    mic = new p5.AudioIn();
    mic.start();
    fft = new p5.FFT();
    fft.setInput(mic);
-
 }
-/*
-function draw() {
-   background(200);
-
-   var spectrum = fft.analyze();
-
-   beginShape();
-   for (i = 0; i<spectrum.length; i++) {
-    vertex(i, map(spectrum[i], 0, 255, height, 0) );
-   }
-   endShape();
-}
-*/
 
 function draw() {
+	 console.log(freq_log);
    background(200);
+	 var product_spectrum = make_spectrum();
+   //Hittar starkaste amplituden
+	 //console.log(fundamental(product_spectrum));
+	 log(fundamental(product_spectrum));
 
-   var spectrum = fft.analyze();
-   fft.smooth();
-   var highest_amp = 0;
-   var freq = 0;
+	 //log(freq);
+	 //console.log(history[0]);
+	 //console.log(current_pitch());
+	plot(product_spectrum);
+}
 
-   //Find the highest amplitude and the corresponding frequency
-	for (i = 0; i<spectrum.length; i++) {
-		if(highest_amp < fft.getEnergy(i)) {
-			highest_amp = fft.getEnergy(i);
-			freq = i;
-		}
+function fundamental(array) {
+	 var fundamental = 0;
+	 var max = 0;
+	 for (i = 0; i < array.length; i++) {
+	 		if (array[i] > max) {
+			 max = array[i];
+			 fundamental = i;
+		 }
+	 }
+	 return fundamental;
+}
+
+function log(freq) {
+	//Lägg till freq i början och ta bort det sista elementet
+	freq_log.unshift(freq);
+	if (freq_log.length > 31){
+		freq_log.pop();
+	}
+}
+
+function current_pitch() {
+	var modes = [];
+	modes = mode(freq_log);
+	return modes[0];
+}
+
+function plot(spectrum) {
+	strokeWeight(3);
+	//plot graph for amplitudes
+	beginShape();
+	for (i = 0; i < spectrum.length; i++) {
+		vertex(i, map(spectrum[i], 0, 255, height, 0) );
+	}
+	endShape();
+}
+
+function make_spectrum() {
+	var spectrum_original = fft.analyze();
+	var highest_amp = 0;
+	var freq = 0;
+
+	var spectrum = [];
+	//Make a new array with 20000 elements which represent frequency
+	for(f = 0; f < 20000; f++)
+	{
+			 spectrum[f] = fft.getEnergy(f);
 	}
 
-	//Print dot on screen for strongest amplitude
-   	strokeWeight(3);
-	beginShape(POINTS);
-	vertex(freq, map(highest_amp, 0, 255, height, 0));
-	endShape();
+	//Samplar ner originalfrekvensen till 1/2 och 1/3 av originalet
+	var downsample2 = downSample(spectrum, 2);
+	var downsample3 = downSample(spectrum, 3);
 
-/*
-	// Print frequency and amplitude to console
-   setInterval(function() {
-   	console.log(highest_amp + ", " + freq);
+	//Gör spectrum multiplication thing badabim boom
+	var product_spectrum = [];
+	for (i = 0; i < downsample3.length; i++) {
+		product_spectrum[i] = spectrum[i]*downsample2[i]*downsample3[i];
+		//Normerar vektorn
+		product_spectrum[i] = product_spectrum[i]/(255*255);
+	}
 
-   }, 1000);
-*/
+	return product_spectrum;
+}
 
-      beginShape();
-      for (i = 20; i < 20000; i += 10) {
-      	vertex(i, map(fft.getEnergy(i), 0, 255, height, 0) );
-      /*
-   for (i = 0; i<spectrum.length; i++) {
-    vertex(i, map(spectrum[i], 0, 255, height, 0) ); */
-   }
-   endShape();
+
+
+function mode(numbers) {
+    // as result can be bimodal or multi-modal,
+    // the returned result is provided as an array
+    // mode of [3, 5, 4, 4, 1, 1, 2, 3] = [1, 3, 4]
+    var modes = [], count = [], i, number, maxIndex = 0;
+
+    for (i = 0; i < numbers.length; i += 1) {
+        number = numbers[i];
+        count[number] = (count[number] || 0) + 1;
+        if (count[number] > maxIndex) {
+            maxIndex = count[number];
+        }
+    }
+
+    for (i in count)
+        if (count.hasOwnProperty(i)) {
+            if (count[i] === maxIndex) {
+                modes.push(Number(i));
+            }
+        }
+
+    return modes;
+}
+
+function downSample(array, factor){
+	var result = [];
+	for (i = 0; i < array.length; i = i + factor) {
+		mean = 0;
+		for (j = 0; j < factor; j++){
+			mean += array[i + j] / factor;
+		}
+		result[i] = mean;
+	}
+	return result;
 }
