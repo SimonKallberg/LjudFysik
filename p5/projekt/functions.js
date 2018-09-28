@@ -1,5 +1,19 @@
 var mic, fft;
 var freq_log = [0,1,2];
+var count = 0;
+var permission;
+var chords = {'c':  "c",
+							'c#': "e",
+							'd':  "dm",
+							'd#': "dm",
+							'e':  "e",
+							'f':  "dm",
+							'f#': "e",
+							'g':  "c",
+						  'g#': "e",
+							'a':  "am",
+							'a#': "c",
+							'b':  "e"};
 
 function setup() {
 	createCanvas(1024,400);
@@ -12,17 +26,19 @@ function setup() {
 }
 
 function draw() {
-	 console.log(freq_log);
    background(200);
 	 var product_spectrum = make_spectrum();
-   //Hittar starkaste amplituden
-	 //console.log(fundamental(product_spectrum));
-	 log(fundamental(product_spectrum));
-
-	 //log(freq);
-	 //console.log(history[0]);
-	 //console.log(current_pitch());
-	plot(product_spectrum);
+	 history(fundamental(product_spectrum));
+	 var n = note(fundamental(product_spectrum));
+   console.log(n + ", " + chords[n]);
+	 plot(product_spectrum);
+	 if (permission) {
+		 if (count == 30) {
+			 play(chords[n]);
+			 count = 0;
+		 }
+		 count++;
+	 }
 }
 
 function fundamental(array) {
@@ -37,8 +53,7 @@ function fundamental(array) {
 	 return fundamental;
 }
 
-function log(freq) {
-	//Lägg till freq i början och ta bort det sista elementet
+function history(freq) {
 	freq_log.unshift(freq);
 	if (freq_log.length > 31){
 		freq_log.pop();
@@ -49,6 +64,32 @@ function current_pitch() {
 	var modes = [];
 	modes = mode(freq_log);
 	return modes[0];
+}
+
+function note(frequency) {
+	var notes = {65: 'c',
+							 69: 'c#',
+						   73: 'd',
+							 78: 'd#',
+							 82: 'e',
+							 87: 'f',
+							 93: 'f#',
+							 98: 'g',
+							 104: 'g#',
+							 110: 'a',
+							 117: 'a#',
+							 123: 'b'};
+
+	while (frequency > 125) {
+		frequency = frequency / 2;
+	}
+
+	var closest = 110; //ett a by default
+	for (const note in notes) {
+		if ((frequency - note)*(frequency - note) < closest)
+		closest = note;
+	}
+	return notes[closest];
 }
 
 function plot(spectrum) {
@@ -76,13 +117,14 @@ function make_spectrum() {
 	//Samplar ner originalfrekvensen till 1/2 och 1/3 av originalet
 	var downsample2 = downSample(spectrum, 2);
 	var downsample3 = downSample(spectrum, 3);
+	var downsample4 = downSample(spectrum, 4);
 
 	//Gör spectrum multiplication thing badabim boom
 	var product_spectrum = [];
-	for (i = 0; i < downsample3.length; i++) {
-		product_spectrum[i] = spectrum[i]*downsample2[i]*downsample3[i];
+	for (i = 0; i < downsample4.length; i++) {
+		product_spectrum[i] = spectrum[i]*downsample2[i]*downsample3[i]*downsample4[i];
 		//Normerar vektorn
-		product_spectrum[i] = product_spectrum[i]/(255*255);
+		product_spectrum[i] = product_spectrum[i]/(255*255*255);
 	}
 
 	return product_spectrum;
