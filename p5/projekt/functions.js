@@ -1,7 +1,6 @@
 var mic, fft;
 var freq_log = [0,1,2];
 var count = 0;
-var permission;
 var chords = {'c':  "c",
 							'c#': "e",
 							'd':  "dm",
@@ -26,19 +25,40 @@ function setup() {
 }
 
 function draw() {
+	 //Draws background for frequency spectrum
    background(200);
+	 //Creates spectrum with 5000 slots, 0-5000 Hz, with amplitude stored
 	 var product_spectrum = make_spectrum();
-	 history(fundamental(product_spectrum));
-	 var n = note(fundamental(product_spectrum));
-   console.log(n + ", " + chords[n]);
+	 //Finds highest amplitude in product spectrum
+	 var current_pitch = fundamental(product_spectrum);
+	 //Adds current pitch to freq_log
+	 history(current_pitch);
+	 //Finds amplitude of the current pitch
+	 var current_amplitude = product_spectrum[current_pitch];
+	 //Identifies which note the current pitch has
+	 var identified_note = note(identified_pitch());
+	 //Logs to console
+   console.log(identified_note + ", " + identified_pitch() + ", " + chords[identified_note]);
+	 //Plots freqency spectrum
 	 plot(product_spectrum);
-	 if (permission) {
-		 if (count == 30) {
-			 play(chords[n]);
-			 count = 0;
+	 //Plays chord every x frames if amplitude is great enough
+	 if (count == 30) {
+		 var threshold = document.getElementById("threshold_slider").value;
+		 if (current_amplitude > threshold) {
+			 play(chords[identified_note]);
+			 document.getElementById("pitch").innerHTML = identified_note;
+			 document.getElementById("chord").innerHTML = chords[identified_note];
+		 } else {
+			 fadeOut(playing);
+			 document.getElementById("pitch").innerHTML = "-";
+			 document.getElementById("chord").innerHTML = "-";
 		 }
-		 count++;
+		 count = 0;
+		 //Changes the HTML
+
 	 }
+	 count++;
+
 }
 
 function fundamental(array) {
@@ -60,7 +80,7 @@ function history(freq) {
 	}
 }
 
-function current_pitch() {
+function identified_pitch() {
 	var modes = [];
 	modes = mode(freq_log);
 	return modes[0];
@@ -80,14 +100,17 @@ function note(frequency) {
 							 117: 'a#',
 							 123: 'b'};
 
-	while (frequency > 125) {
+	while (frequency > 128) {
 		frequency = frequency / 2;
 	}
 
-	var closest = 110; //ett a by default
+	var closest = 110;
+	var delta = 1000;
 	for (const note in notes) {
-		if ((frequency - note)*(frequency - note) < closest)
-		closest = note;
+		if ((frequency - note)*(frequency - note) < delta) {
+			delta = (frequency - note)*(frequency - note);
+			closest = note;
+		}
 	}
 	return notes[closest];
 }
@@ -127,6 +150,10 @@ function make_spectrum() {
 		product_spectrum[i] = product_spectrum[i]/(255*255*255);
 	}
 
+	for (i = 0; i < 63; i++){
+		product_spectrum[i] = 0;
+	}
+
 	return product_spectrum;
 }
 
@@ -163,7 +190,7 @@ function downSample(array, factor){
 		for (j = 0; j < factor; j++){
 			mean += array[i + j] / factor;
 		}
-		result[i] = mean;
+		result[i/factor] = mean;
 	}
 	return result;
 }

@@ -2,9 +2,6 @@ var playing = 0;
 var label;
 
 function init() {
-  if (confirm("Får vi spela ljud?")){
-    permission = true;
-  }
   setInterval(keepPlaying, 10);
 }
 

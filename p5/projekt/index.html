@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>p5.js example</title>
+    <title>Auto komp</title>
     <style> body {padding: 0; margin: 0;} </style>
     <script src="../math.js" type="text/javascript"></script>
     <script src="../p5.min.js"></script>
@@ -13,6 +13,8 @@
     <script src="script.js"></script>
   </head>
   <body onload="init()">
+    <h2>Threshold</h2>
+    <input id="threshold_slider"type="range" min="1" max="150" value="80">
     <h2>Identified pitch:</h2>
     <h1 id="pitch">A</h1>
     <h2>Playing chord:</h2>
